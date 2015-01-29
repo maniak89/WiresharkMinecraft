@@ -25,16 +25,16 @@ void MinecraftProtoParser::dissect_foo(tvbuff_t *tvb, packet_info *pinfo, proto_
 
 }
 
-void MinecraftProtoParser::proto_register_foo()
+void MinecraftProtoParser::proto_register()
 {
 	proto_minecraft = proto_register_protocol(
-		"Minecraft", /* полное имя */
-		"MC",          /* короткое имя */
-		"mc"           /* аббревиатура */
+		"Minecraft", /* пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ */
+		"MC",          /* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ */
+		"mc"           /* пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ */
 		);
 }
 
-void MinecraftProtoParser::proto_reg_handoff_foo()
+void MinecraftProtoParser::proto_reg_handoff()
 {
 	dissector_handle_t minecraft_handle;
 

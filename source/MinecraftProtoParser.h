@@ -1,4 +1,6 @@
-#pragma once
+#include "stdafx.h"
+#ifndef MINECRAFTPROTOPARSER_H
+#define MINECRAFTPROTOPARSER_H
 
 class MinecraftProtoParser
 {
@@ -12,10 +14,11 @@ private:
 	int proto_minecraft;
 public:
 	static MinecraftProtoParser *getInstance();
-	void proto_register_foo();
-	void proto_reg_handoff_foo();
+	void proto_register();
+	void proto_reg_handoff();
 	int getProto();
 	
 	
 };
 
+#endif

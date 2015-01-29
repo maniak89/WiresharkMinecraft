@@ -1,0 +1,635 @@
+<proto>
+    <class name="ThreeByte">
+        <field name="byte1" type="Byte"/>
+        <field name="byte2" type="Byte"/>
+        <field name="byte3" type="Byte"/>
+    </class>
+    <packet id="0x00" name="Handshake" boundto="Server" state="Handshake" comment="This causes the server to switch into the target state.">
+        <field name="ProtocolVersion" type="VarInt" comment="See protocol version numbers (currently 47)"/>
+        <field name="ServerAddress" type="String" comment="hostname or IP, e.g. localhost or 127.0.0.1"/>
+        <field name="ServerPort" type="UnsignedShort" comment="default is 25565"/>
+        <field name="NextState" type="VarInt" comment="1 for status, 2 for login"/>
+    </packet>
+    <packet id="0x00" name="KeepAlive" boundto="Client" state="Play"  comment="The server will frequently send out a keep-alive, each containing a random ID. The client must respond with the same packet. If the client does not respond to them for over 30 seconds, the server kicks the client. Vice versa, if the server does not send any keep-alives for 20 seconds, the client will disconnect and yields a &quot;Timed out&quot; exception.">
+        <field name="KeepAliveID" type="VarInt" comment=""/>
+    </packet>
+    <packet id="0x01" name="JoinGame" boundto="Client" state="Play" comment="">
+        <field name="EntityID" type="Int" comment="The player's Entity ID (EID)"/>
+        <field name="Gamemode" type="UnsignedByte" comment="0: Survival, 1: Creative, 2: Adventure, 3: Spectator. Bit 3 (0x8) is the hardcore flag."/>
+        <field name="Dimension" type="Byte" comment="-1: Nether, 0: Overworld, 1: End"/>
+        <field name="Difficulty" type="UnsignedByte" comment="0: peaceful, 1: easy, 2: normal, 3: hard"/>
+        <field name="MaxPlayers" type="UnsignedByte" comment="Used by the client to draw the player list"/>
+        <field name="LevelType" type="String" comment="default, flat, largeBiomes, amplified, default_1_1"/>
+        <field name="ReducedDebugInfo" type="Boolean" comment=""/>
+    </packet>
+    <packet id="0x02" name="ChatMessage" boundto="Client" state="Play" comment="Identifying the difference between Chat/System Message is important as it helps respect the user's chat visibility options. While Position 2 accepts json formatting it will not display, old style formatting works">
+        <field name="JSONData" type="String" comment="Limited to 32767 bytes"/>
+        <field name="Position" type="Byte" comment="0: chat (chat box), 1: system message (chat box), 2: above action bar"/>
+    </packet>
+    <packet id="0x03" name="TimeUpdate" boundto="Client" state="Play" comment="Time is based on ticks, where 20 ticks happen every second. There are 24000 ticks in a day, making Minecraft days exactly 20 minutes long. The time of day is based on the timestamp modulo 24000. 0 is sunrise, 6000 is noon, 12000 is sunset, and 18000 is midnight. The default SMP server increments the time by 20 every second.">
+        <field name="WorldAge" type="Long" comment="In ticks; not changed by server commands"/>
+        <field name="TimeOfDay" type="Long" comment="The world (or region) time, in ticks. If negative the sun will stop moving at the Math.abs of the time"/>
+    </packet>
+    <packet id="0x04" name="EntityEquipment" boundto="Client" state="Play" comment="">
+        <field name="Entity ID" type="VarInt" comment="Entity's EID"/>
+        <field name="Slot" type="Short" comment="Equipment slot. 0: held, 1–4: armor slot (1: boots, 2: leggings, 3: chestplate, 4: helmet)"/>
+        <field name="Item" type="Slot" comment="Item in slot format"/>
+    </packet>
+    <packet id="0x05" name="SpawnPosition" boundto="Client" state="Play" comment="Sent by the server after login to specify the coordinates of the spawn point (the point at which players spawn at, and which the compass points to). It can be sent at any time to update the point compasses point at.">
+        <field name="Location" type="Position" comment="Spawn location"/>
+    </packet>
+    <packet id="0x06" name="UpdateHealth" boundto="Client" state="Play" comment="Sent by the server to update/set the health of the player it is sent to. Food saturation acts as a food “overcharge”. Food values will not decrease while the saturation is over zero. Players logging in automatically get a saturation of 5.0. Eating food increases the saturation as well as the food bar.">
+        <field name="Health" type="Float" comment="0 or less = dead, 20 = full HP"/>
+        <field name="Food" type="VarInt" comment="0–20"/>
+        <field name="FoodSaturation" type="Float" comment="Seems to vary from 0.0 to 5.0 in integer increments"/>
+    </packet>
+    <packet id="0x07" name="Respawn" boundto="Client" state="Play" comment="To change the player's dimension (overworld/nether/end), send them a respawn packet with the appropriate dimension, followed by prechunks/chunks for the new dimension, and finally a position and look packet. You do not need to unload chunks, the client will do it automatically.">
+        <field name="Dimension" type="Int" comment="-1: The Nether, 0: The Overworld, 1: The End"/>
+        <field name="Difficulty" type="UnsignedByte" comment="0: Peaceful, 1: Easy, 2: Normal, 3: Hard"/>
+        <field name="Gamemode" type="UnsignedByte" comment="0: survival, 1: creative, 2: adventure. The hardcore flag is not included"/>
+        <field name="LevelType" type="String" comment="Same as Join Game"/>
+    </packet>
+    <packet id="0x08" name="PlayerPositionAndLook" boundto="Client" state="Play" comment="Updates the players position on the server. If the distance between the last known position of the player on the server and the new position set by this packet is greater than 100 units will result in the client being kicked for “You moved too quickly :( (Hacking?)” Also if the fixed-point number of X or Z is set greater than 3.2E7D the client will be kicked for “Illegal position” Yaw is measured in degrees, and does not follow classical trigonometry rules. The unit circle of yaw on the XZ-plane starts at (0, 1) and turns counterclockwise, with 90 at (-1, 0), 180 at (0, -1) and 270 at (1, 0). Additionally, yaw is not clamped to between 0 and 360 degrees; any number is valid, including negative numbers and numbers greater than 360. Pitch is measured in degrees, where 0 is looking straight ahead, -90 is looking straight up, and 90 is looking straight down. The yaw of player (in degrees), standing at point (x0, z0) and looking towards point (x, z) one can be calculated with:">
+        <field name="X" type="Double" comment="Absolute or relative position, depending on Flags"/>
+        <field name="Y" type="Double" comment="Absolute or relative position, depending on Flags"/>
+        <field name="Z" type="Double" comment="Absolute or relative position, depending on Flags"/>
+        <field name="Yaw" type="Float" comment="Absolute or relative rotation on the X Axis, in degrees"/>
+        <field name="Pitch" type="Float" comment="Absolute or relative rotation on the Y Axis, in degrees"/>
+        <field name="Falgs" type="Byte" comment="Bit field, see below"/>
+    </packet>
+    <packet id="0x09" name="HeldItemChange" boundto="Client" state="Play" comment="Sent to change the player's slot selection.">
+        <field name="Slot" type="Byte" comment="The slot which the player has selected (0–8)"/>
+    </packet>
+    <packet id="0x0A" name="UseBed" boundto="Client" state="Play" comment="This packet tells that a player goes to bed. The client with the matching Entity ID will go into bed mode. This Packet is sent to all nearby players including the one sent to bed.">
+        <field name="EntityID" type="VarInt" comment="Sleeping player's EID"/>
+        <field name="Location" type="Position" comment="Block location of the head part of the bed"/>
+    </packet>        
+    <packet id="0x0B" name="Animation" boundto="Client" state="Play" comment="Sent whenever an entity should change animation.">
+        <field name="EntityID" type="VarInt" comment="Player ID"/>
+        <field name="Animation" type="Unsigned Byte" comment="Animation ID (see below)"/>
+    </packet>
+    <packet id="0x0C" name="SpawnPlayer" boundto="Client" state="Play" comment="This packet is sent by the server when a player comes into visible range, not when a player joins. Servers can, however, safely spawn player entities for players not in visible range. The client appears to handle it correctly. When in online-mode the UUIDs must be valid and have valid skin blobs, in offline-mode UUID v3 is used. For NPCs UUID v2 should be used. Note: In an example UUID, xxxxxxxx-xxxx-Yxxx-xxxx-xxxxxxxxxxxx, the UUID version is specified by Y. So, for UUID v3, Y will always be 3, and for UUID v2, Y will always be 2.">
+        <field name="EntityID" type="VarInt" comment="Player's EID"/>
+        <field name="PlayerUUID" type="UUID" comment="Animation ID (see below)"/>
+        <field name="X" type="Int" comment="Player X as a Fixed-Point number"/>
+        <field name="Y" type="Int" comment="Player Y as a Fixed-Point number"/>
+        <field name="Z" type="Int" comment="Player Z as a Fixed-Point number"/>
+        <field name="Yaw" type="Angle" comment=""/>
+        <field name="Pitch" type="Angle" comment=""/>
+        <field name="CurrentItem" type="Short" comment="The item the player is currently holding. Note that this should be 0 for “no item”, unlike -1 used in other packets."/>
+        <field name="Metadata" type="Metadata" comment=""/>
+    </packet>
+    <packet id="0x0D" name="CollectItem" boundto="Client" state="Play" comment="Sent by the server when someone picks up an item lying on the ground — its sole purpose appears to be the animation of the item flying towards you. It doesn't destroy the entity in the client memory, and it doesn't add it to your inventory. The server only checks for items to be picked up after each Player Position (and Player Position And Look) packet sent by the client.">
+        <field name="CollectedEntityID" type="VarInt" comment=""/>
+        <field name="Collected EntityID" type="VarInt" comment=""/>
+    </packet>
+    <packet id="0x0E" name="SpawnObject" boundto="Client" state="Play" comment="Sent by the server when an Object/Vehicle is created.">
+        <field name="EntityID" type="VarInt" comment="Player's EID"/>
+        <field name="Type" type="Byte" comment="The type of object (See Objects)"/>
+        <field name="X" type="Int" comment="Player X as a Fixed-Point number"/>
+        <field name="Y" type="Int" comment="Player Y as a Fixed-Point number"/>
+        <field name="Z" type="Int" comment="Player Z as a Fixed-Point number"/>
+        <field name="Pitch" type="Angle" comment=""/>
+        <field name="Yaw" type="Angle" comment=""/>
+        <field name="Data" type="Object Data" comment=""/>
+    </packet>
+    <packet id="0x0F" name="SpawnMob" boundto="Client" state="Play" comment="Sent by the server when a Mob Entity is Spawned">
+        <field name="EntityID" type="VarInt" comment="Player's EID"/>
+        <field name="Type" type="UnsignedByte" comment="The type of mob. See Mobs"/>
+        <field name="X" type="Int" comment="Player X as a Fixed-Point number"/>
+        <field name="Y" type="Int" comment="Player Y as a Fixed-Point number"/>
+        <field name="Z" type="Int" comment="Player Z as a Fixed-Point number"/>
+        <field name="Pitch" type="Angle" comment=""/>
+        <field name="Yaw" type="Angle" comment=""/>
+        <field name="Head Pitch" type="Angle" comment=""/>
+        <field name="Velocity X" type="Angle" comment="Same units as Entity Velocity"/>
+        <field name="Velocity Y" type="Angle" comment="Same units as Entity Velocity"/>
+        <field name="Velocity Z" type="Angle" comment="Same units as Entity Velocity"/>
+        <field name="Metadata" type="Metadata" comment=""/>
+    </packet>
+    <packet id="0x10" name="SpawnPainting" boundto="Client" state="Play" comment="This packet shows location, name, and type of painting. Calculating the center of an image: given a (width x height) grid of cells, with (0, 0) being the top left corner, the center is (max(0, width / 2 - 1), height / 2). E.g.">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="Title" type="String" comment="Name of the painting. Max length 13"/>
+        <field name="Location" type="Position" comment="Center coordinates"/>
+        <field name="Direction" type="UnsignedByte" comment="Direction the painting faces. 0: north (-z), 1: west (-x), 2: south (+z), 3: east (+x) Spawn Experience Orb"/>
+    </packet>
+    <packet id="0x11" name="SpawnExperienceOrb" boundto="Client" state="Play" comment="This packet shows location, name, and type of painting. Calculating the center of an image: given a (width x height) grid of cells, with (0, 0) being the top left corner, the center is (max(0, width / 2 - 1), height / 2). E.g.">
+        <field name="EntityID" type="VarInt" comment="Entity's ID"/>
+        <field name="X" type="Int" comment="Player X as a Fixed-Point number"/>
+        <field name="Y" type="Int" comment="Player Y as a Fixed-Point number"/>
+        <field name="Z" type="Int" comment="Player Z as a Fixed-Point number"/>
+        <field name="Count" type="Short" comment="The amount of experience this orb will reward once collected"/>
+    </packet>
+    <packet id="0x12" name="EntityVelocity" boundto="Client" state="Play" comment="Velocity is believed to be in units of 1/8000 of a block per server tick (50ms); for example, -1343 would move (-1343 / 8000) = ?0.167875 blocks per tick (or ?3,3575 blocks per second).">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="Velocity X" type="Short" comment="Velocity on the X axis"/>
+        <field name="Velocity Y" type="Short" comment="Velocity on the Y axis"/>
+        <field name="Velocity Z" type="Short" comment="Velocity on the Z axis"/>
+    </packet>
+    <packet id="0x13" name="DestroyEntities" boundto="Client" state="Play" comment="Sent by the server when a list of entities is to be destroyed on the client.">
+        <field name="Count" type="VarInt" comment="Number of elements in the following array"/>
+        <field name="EntityIDs" type="Array" subtype="VarInt" comment="The list of entities of destroy"/>
+    </packet>
+    <packet id="0x14" name="Entity" boundto="Client" state="Play" comment="Most entity-related packets are subclasses of this packet. When sent from the server to the client, it may initialize the entry. For player entities, either this packet or any move/look packet is sent every game tick. So the meaning of this packet is basically that the entity did not move/look since the last such packet.">
+        <field name="EntityID" type="VarInt" comment=""/>
+    </packet>
+    <packet id="0x15" name="EntityRelativeMove" boundto="Client" state="Play" comment="Most entity-related packets are subclasses of this packet. When sent from the server to the client, it may initialize the entry. For player entities, either this packet or any move/look packet is sent every game tick. So the meaning of this packet is basically that the entity did not move/look since the last such packet.">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="DeltaX" type="Byte" comment="Change in X position as a Fixed-Point number"/>
+        <field name="DY" type="Byte" comment="Change in Y position as a Fixed-Point number"/>
+        <field name="DZ" type="Byte" comment="Change in Z position as a Fixed-Point number"/>
+        <field name="OnGround" type="Boolean" comment=""/>
+    </packet>
+    <packet id="0x16" name="EntityLook" boundto="Client" state="Play" comment="This packet is sent by the server when an entity rotates.">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="Yaw" type="Angle" comment="New angle, not a delta"/>
+        <field name="Pitch" type="Angle" comment="New angle, not a delta"/>
+        <field name="OnGround" type="Boolean" comment=""/>
+    </packet>
+    <packet id="0x17" name="EntityLookAndRelativeMove" boundto="Client" state="Play" comment="This packet is sent by the server when an entity rotates.">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="DeltaX" type="Byte" comment="Change in X position as a Fixed-Point number"/>
+        <field name="DeltaY" type="Byte" comment="Change in Y position as a Fixed-Point number"/>
+        <field name="DeltaZ" type="Byte" comment="Change in Z position as a Fixed-Point number"/>
+        <field name="Yaw" type="Angle" comment="New angle, not a delta"/>
+        <field name="Pitch" type="Angle" comment="New angle, not a delta"/>
+        <field name="OnGround" type="Boolean" comment=""/>
+    </packet>
+    <packet id="0x18" name="EntityTeleport" boundto="Client" state="Play" comment="This packet is sent by the server when an entity moves more than 4 blocks.">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="X" type="Int" comment="X position as a Fixed-Point number"/>
+        <field name="Y" type="Int" comment="Y position as a Fixed-Point number"/>
+        <field name="Z" type="Int" comment="Z position as a Fixed-Point number"/>
+        <field name="Yaw" type="Angle" comment="New angle, not a delta"/>
+        <field name="Pitch" type="Angle" comment="New angle, not a delta"/>
+        <field name="OnGround" type="Boolean" comment=""/>
+    </packet>
+    <packet id="0x19" name="EntityLook2" boundto="Client" state="Play" comment="Changes the direction an entity's head is facing.">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="HeadYaw" type="Angle" comment="New angle, not a delta"/>
+    </packet>
+    <packet id="0x1A" name="EntityStatus" boundto="Client" state="Play" comment="">
+        <field name="EntityID" type="Int" comment=""/>
+        <field name="EntityStatus" type="Byte" comment="See below"/>
+    </packet>
+    <packet id="0x1B" name="AttachEntity" boundto="Client" state="Play" comment="This packet is sent when a player has been attached to an entity (e.g. Minecart)">
+        <field name="EntityID" type="Int" comment="Attached entity's EID"/>
+        <field name="VehicleID" type="Int" comment="Vechicle's Entity ID"/>
+        <field name="Leash" type="Boolean" comment="If true leashes the entity to the vehicle"/>
+    </packet>
+    <packet id="0x1C" name="EntityMetadata" boundto="Client" state="Play" comment="">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="Metadata" type="Metadata" comment=""/>
+    </packet>
+    <packet id="0x1D" name="EntityEffect" boundto="Client" state="Play" comment="">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="EntityID" type="Byte" comment="See this table"/>
+        <field name="Amplifier" type="Byte" comment="Notchian client displays effect level as Amplifier + 1"/>
+        <field name="Duration" type="VarInt" comment="Seconds"/>
+        <field name="Hide Particles" type="Boolean" comment=""/>
+    </packet>
+    <packet id="0x1E" name="RemoveEntityEffect" boundto="Client" state="Play" comment="">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="EffectID" type="Byte" comment="See this table"/>
+    </packet>
+    <packet id="0x1F" name="SetExperience" boundto="Client" state="Play" comment="">
+        <field name="ExperienceBar" type="Float" comment="Between 0 and 1"/>
+        <field name="Level" type="VarInt" comment=""/>
+        <field name="TotalExperience" type="VarInt" comment="See Experience#Leveling up on the Minecraft Wiki for Total Experience to Level conversion"/>
+    </packet>
+    <class name="ModifierData">
+        <field name="UUID" type="UUID"/>
+        <field name="Amount" type="Double"/>
+        <field name="Operation" type="Byte"/>
+    </class>
+    <class name="EntityProperties">
+        <field name="Key" type="String"/>
+        <field name="Value" type="Double"/>
+        <field name="NumberOfModifiers" type="VarInt"/>
+        <field name="Modifiers" type="Array" subtype="ModifierData"/>
+    </class>
+    <packet id="0x20" name="EntityProperties" boundto="Client" state="Play" comment="">
+        <field name="EntityID" type="VarInt" comment=""/>
+        <field name="NumberOfProperties" type="Int" comment="Number of elements in the following array"/>
+        <field name="Property" type="Array" subtype="EntityProperties" comment="See below"/>
+    </packet>
+    <packet id="0x21" name="ChunkData" boundto="Client" state="Play" comment="Chunks are not unloaded by the client automatically. To unload chunks, send this packet with Ground-Up Continuous=true and no 16^3 chunks (eg. Primary Bit Mask=0). The server does not send skylight information for nether-chunks, it's up to the client to know if the player is currently in the nether. You can also infer this information from the primary bitmask and the amount of uncompressed bytes sent.">
+        <field name="ChunkX" type="Int" comment="Chunk X coordinate"/>
+        <field name="ChunkZ" type="Boolean" comment="Chunk Z coordinate"/>
+        <field name="Ground-UpContinuous" type="Array" subtype="String" comment="This is true if the packet represents all sections in this vertical column, where the Primary Bit Mask specifies exactly which sections are included, and which are air"/>
+        <field name="PrimaryBitMask" type="UnsignedShort" comment="Bitmask with 1 for every 16x16x16 section whose data follows in the compressed data"/>
+        <field name="Size" type="VarInt" comment="Size of Data"/>
+        <field name="Data" type="Chunk" comment="See Attribute#Modifiers"/>
+    </packet>
+    <packet id="0x22" name="MultiBlockChange" boundto="Client" state="Play" comment="">
+        <field name="ChunkX" type="Int" comment="Chunk X coordinate"/>
+        <field name="ChunkZ" type="Boolean" comment="Chunk Z coordinate"/>
+        <field name="RecordCount" type="VarInt" comment="Number of elements in the following array, a.k.a. the number of blocks affected"/>
+        <field name="RecordHorizontalPosition" type="Array" subtype="UnsignedByte" comment="The 4 most significant bits (0xF0) encode the X coordinate, relative to the chunk. The 4 least significant bits (0x0F) encode the Z coordinate, relative to the chunk."/>
+        <field name="RecordYCoordinate" type="Array" subtype="UnsignedByte" comment=""/>
+        <field name="RecordBlockID" type="Array" subtype="VarInt" comment="The new block ID for the block. id &lt;&lt; 4 | data"/>
+    </packet>
+    <packet id="0x23" name="BlockChange" boundto="Client" state="Play" comment="">
+        <field name="Location" type="Position" comment="Block Coordinates"/>
+        <field name="BlockID" type="VarInt" comment="The new block ID for the block. id &lt;&lt; 4 | data"/>
+    </packet>
+    <packet id="0x24" name="BlockChange2" boundto="Client" state="Play" comment="">
+        <field name="Location" type="Position" comment="Block Coordinates"/>
+        <field name="Byte1" type="UnsignedByte" comment="Varies depending on block — see Block Actions"/>
+        <field name="Byte2" type="UnsignedByte" comment="Varies depending on block — see Block Actions"/>
+        <field name="BlockType" type="VarInt" comment="The block type for the block"/>
+    </packet>
+    <packet id="0x25" name="BlockBreakAnimation" boundto="Client" state="Play" comment="0–9 are the displayable destroy stages and each other number means that there is no animation on this coordinate. You can also set an animation to air! The animation will still be visible. If you need to display several break animations at the same time you have to give each of them a unique Entity ID. Also if you set the coordinates to a special block like water etc. it won't show the actual break animation but some other interesting effects. (Water will lose it's transparency)">
+        <field name="EntityID" type="VarInt" comment="Entity's ID"/>
+        <field name="Location" type="Position" comment="Block Coordinates"/>
+        <field name="DestroyStage" type="Byte" comment="0–9 to set it, any other value to remove it"/>
+    </packet>
+    <packet id="0x26" name="MapChunkBulk" boundto="Client" state="Play" comment="1.8 changes at Chunk Data. To reduce the number of bytes, this packet is used to send chunks together for better compression results.">
+        <field name="SkyLightSent" type="Boolean" comment="Whether or not Chunk Data contains light nibble arrays. This is true in the Overworld, false in the End + Nether"/>
+        <field name="ChunkColumnCount" type="VarInt" comment="Number of elements in each of the following arrays"/>
+        <field name="ChunkMetaChunkX" type="Array" subtype="Int" comment="The X coordinate of the chunk"/>
+        <field name="ChunkMetaChunkZ" type="Array" subtype="Int" comment="The Z coordinate of the chunk"/>
+        <field name="ChunkMetaPrimaryBitMask" type="Array" subtype="UnsignedShort" comment="A bit mask which specifies which sections are not empty in this chunk"/>
+        <field name="ChunkData" type="Array" subtype="Chunk" comment="Each chunk in this array corresponds to the data at the same position in Chunk Metank"/>
+    </packet>
+    <packet id="0x27" name="Explosion" boundto="Client" state="Play" comment="Sent when an explosion occurs (creepers, TNT, and ghast fireballs). Each block in Records is set to air. Coordinates for each axis in record is int(X) + record.x">
+        <field name="X" type="Float" comment=""/>
+        <field name="Y" type="Float" comment=""/>
+        <field name="Z" type="Float" comment=""/>
+        <field name="Radius" type="Float" comment="Currently unused in the client"/>
+        <field name="RecordCount" type="Array" subtype="ThreeByte" comment="Each record is 3 signed bytes long, each bytes are the XYZ (respectively) offsets of affected blocks."/>
+        <field name="PlayerMotionX" type="Float" comment="X  velocity of the player being pushed by the explosion"/>
+        <field name="PlayerMotionY" type="Float" comment="Y  velocity of the player being pushed by the explosion"/>
+        <field name="PlayerMotionZ" type="Float" comment="Z  velocity of the player being pushed by the explosion"/>
+    </packet>
+    <packet id="0x28" name="Effect" boundto="Client" state="Play" comment="Sent when a client is to play a sound or particle effect. By default, the Minecraft client adjusts the volume of sound effects based on distance. The final boolean field is used to disable this, and instead the effect is played from 2 blocks away in the correct direction. Currently this is only used for effect 1013 (mob.wither.spawn), and is ignored for any other value by the client.">
+        <field name="X" type="Float" comment=""/>
+        <field name="Y" type="Float" comment=""/>
+        <field name="Z" type="Float" comment=""/>
+        <field name="Radius" type="Float" comment="Currently unused in the client"/>
+        <field name="RecordCount" type="Array" subtype="ThreeByte" comment="Each record is 3 signed bytes long, each bytes are the XYZ (respectively) offsets of affected blocks."/>
+        <field name="PlayerMotionX" type="Float" comment="X  velocity of the player being pushed by the explosion"/>
+        <field name="PlayerMotionY" type="Float" comment="Y  velocity of the player being pushed by the explosion"/>
+        <field name="PlayerMotionZ" type="Float" comment="Z  velocity of the player being pushed by the explosion"/>
+    </packet>
+    <packet id="0x29" name="SoundEffect" boundto="Client" state="Play" comment="Used to play a sound effect on the client. Custom sounds may be added by resource packs..">
+        <field name="SoundName" type="String" comment="All known sound effect names can be seen here"/>
+        <field name="EffectpositionX" type="Int" comment="Effect X multiplied by 8"/>
+        <field name="EffectpositionY" type="Int" comment="Effect Y multiplied by 8"/>
+        <field name="EffectpositionZ" type="Int" comment="Effect Z multiplied by 8"/>
+        <field name="Volume" type="Float" comment="1 is 100%, can be more."/>
+        <field name="Pitch" type="UnsignedByte" comment="63 is 100%, can be more"/>
+    </packet>
+    <packet id="0x2A" name="Particle" boundto="Client" state="Play" comment="Displays the named particle">
+        <field name="Particle ID" type="Int" comment="See below"/>
+        <field name="Long Distance" type="Boolean" comment="If true, particle distance increases from 256 to 65536"/>
+        <field name="X" type="Float" comment="X position of the particle"/>
+        <field name="Y" type="Float" comment="Y position of the particle"/>
+        <field name="Z" type="Float" comment="Z position of the particle"/>
+        <field name="OffsetX" type="Float" comment="This is added to the X position after being multiplied by random.nextGaussian()"/>
+        <field name="OffsetY" type="Float" comment="This is added to the Y position after being multiplied by random.nextGaussian()"/>
+        <field name="OffsetZ" type="Float" comment="This is added to the Z position after being multiplied by random.nextGaussian()"/>
+        <field name="ParticleData" type="Float" comment="The data of each particle"/>
+        <field name="ParticleCoun" type="Int" comment="The number of particles to create"/>
+        <field name="Data" type="Array" subtype="VarInt" comment="Z position of the particle"/>
+    </packet>
+    <packet id="0x2B" name="ChangeGameState" boundto="Client" state="Play" comment="It appears when a bed can't be used as a spawn point and when the rain state changes.">
+        <field name="Reason" type="UnsignedByte" comment="See below"/>
+        <field name="Value" type="Float" comment="Depends on reason"/>
+    </packet>
+    <packet id="0x2C" name="SpawnGlobalEntity" boundto="Client" state="Play" comment="With this packet, the server notifies the client of thunderbolts striking within a 512 block radius around the player. The coordinates specify where exactly the thunderbolt strikes.">
+        <field name="EntityID" type="VarInt" comment="The EID of the thunderbolt"/>
+        <field name="Type" type="Byte" comment="The global entity type, currently always 1 for thunderbolt"/>
+        <field name="X" type="Int" comment="Thunderbolt X, a fixed-point number"/>
+        <field name="Y" type="Int" comment="Thunderbolt Y, a fixed-point number"/>
+        <field name="Z" type="Int" comment="Thunderbolt Z, a fixed-point number"/>
+    </packet>
+    <packet id="0x2D" name="OpenWindow" boundto="Client" state="Play" comment="This is sent to the client when it should open an inventory, such as a chest, workbench, or furnace. This message is not sent anywhere for clients opening their own inventory.">
+        <field name="WindowID" type="UnsignedByte" comment="A unique id number for the window to be displayed. Notchian server implementation is a counter, starting at 1"/>
+        <field name="WindowType" type="String" comment="The window type to use for display. See below"/>
+        <field name="WindowTitle" type="Chat" comment="The title of the window"/>
+        <field name="NumberOfSlots" type="UnsignedByte" comment="Number of slots in the window (excluding the number of slots in the player inventory)"/>
+        <field name="EntityID" type="Int" optional="true" comment="EntityHorse's EID. Only sent when Window Type is “EntityHorse”"/>
+    </packet>
+    <packet id="0x2E" name="CloseWindow" boundto="Client" state="Play" comment="This packet is sent from the server to the client when a window is forcibly closed, such as when a chest is destroyed while it's open. Note, notchian clients send a close window packet with Window ID 0 to close their inventory even though there is never an Open Window packet for inventory.">
+         <field name="WindowID" type="UnsignedByte" comment="This is the ID of the window that was closed. 0 for inventory."/>
+    </packet>
+    <packet id="0x2F" name="SetSlot" boundto="Client" state="Play" comment="This packet is sent from the server to the client when a window is forcibly closed, such as when a chest is destroyed while it's open. Note, notchian clients send a close window packet with Window ID 0 to close their inventory even though there is never an Open Window packet for inventory.">
+         <field name="WindowID" type="Byte" comment="The window which is being updated. 0 for player inventory. Note that all known window types include the player inventory. This packet will only be sent for the currently opened window while the player is performing actions, even if it affects the player inventory. After the window is closed, a number of these packets are sent to update the player's inventory window (0)."/>
+         <field name="Slot" type="Short" comment="The slot that should be updated"/>
+         <field name="SlotData" type="Slot" comment=""/>
+    </packet>
+    <packet id="0x30" name="WindowItems" boundto="Client" state="Play" comment="Sent by the server when items in multiple slots (in a window) are added/removed. This includes the main inventory, equipped armour and crafting slots.">
+         <field name="WindowID" type="UnsignedByte" comment="The ID of window which items are being sent for. 0 for player inventory."/>
+         <field name="Count" type="Short" comment="Number of elements in the following array"/>
+         <field name="SlotData" type="Array" subtype="Slot" comment=""/>
+    </packet>
+    <packet id="0x31" name="WindowProperty" boundto="Client" state="Play" comment="">
+         <field name="WindowID" type="UnsignedByte" comment=""/>
+         <field name="Property" type="Short" comment="The property to be updated, see below"/>
+         <field name="Value" type="Short" comment="The new value for the property, see below"/>
+    </packet>
+    <packet id="0x32" name="ConfirmTransaction" boundto="Client" state="Play" comment="A packet from the server indicating whether a request from the client was accepted, or whether there was a conflict (due to lag). This packet is also sent from the client to the server in response to a server transaction rejection packet.">
+         <field name="WindowID" type="Byte" comment="The ID of the window that the action occurred in"/>
+         <field name="Property" type="Short" comment="The property to be updated, see below"/>
+         <field name="Value" type="Short" comment="The new value for the property, see below"/>
+    </packet>
+    <packet id="0x33" name="UpdateSign" boundto="Client" state="Play" comment="This message is sent from the server to the client whenever a sign is discovered or created. This message is NOT sent when a sign is destroyed or unloaded.">
+         <field name="Location" type="Position" comment=""/>
+         <field name="Line1" type="Chat" comment="First line of text in the sign"/>
+         <field name="Line2" type="Chat" comment="Second line of text in the sign"/>
+         <field name="Line3" type="Chat" comment="Third line of text in the sign"/>
+         <field name="Line4" type="Chat" comment="Fourth line of text in the sign"/>             
+    </packet>
+    <packet id="0x34" name="Maps" boundto="Client" state="Play" comment="">
+         <field name="ItemDamage" type="VarInt" comment="The damage value of the map being modified"/>
+         <field name="Scale" type="Byte" comment=""/>
+         <field name="IconsLengt" type="VarInt" comment="Number of elements in the following array"/>
+         <field name="Icons" type="Array" subtype="ThreeByte" comment="First byte, 0xF0 = Direction, 0x0F = Type. Second byte, X. Third byte, Y"/>
+         <field name="Rows" type="Byte" optional="true" comment="Only if Columns is more than 0"/>    
+         <field name="X" type="Byte" optional="true" comment="Only if Columns is more than 0"/>             
+         <field name="Y" type="Byte" optional="true" comment="Only if Columns is more than 0"/>         
+         <field name="Length" type="VarInt" optional="true" comment="Only if Columns is more than 0; length of the following array"/>
+         <field name="Data" type="Array" subtype="Byte" optional="true" comment="Only if Columns is more than 0"/>             
+    </packet>
+    <packet id="0x35" name="UpdateBlockEntity" boundto="Client" state="Play" comment="Essentially a block update on a block entity.">
+         <field name="Location" type="Position" comment=""/>
+         <field name="Action" type="UnsignedByte" comment="The type of update to perform, see below"/>
+         <field name="NBTData" type="NBTTag" optional="true" comment="If not present then it's a TAG_END (0)"/>         
+    </packet>
+    <packet id="0x36" name="SignEditorOpen" boundto="Client" state="Play" comment="">
+         <field name="Location" type="Position" comment=""/>     
+    </packet>
+    <packet id="0x37" name="Statistics" boundto="Client" state="Play" comment="">
+         <field name="Count" type="VarInt" comment="Number of elements in the following array"/>     
+         <field name="StatisticName" type="Array" subtype="String" comment="https://gist.github.com/thinkofdeath/a1842c21a0cf2e1fb5e0"/>
+         <field name="StatisticValue" type="Array" subtype="VarInt" comment="The amount to set it to"/>              
+    </packet>
+    <packet id="0x38" name="PlayerListItem" boundto="Client" state="Play" comment="">
+         <field name="Action" type="VarInt" comment="Determines the rest of the Player format after the UUID"/>     
+         <field name="StatisticName" type="VarInt" comment="Number of elements in the following array"/>
+         <field name="StatisticValue" type="Array" subtype="VarInt" comment="The amount to set it to"/>              
+    </packet>
+    <packet id="0x39" name="PlayerAbilities" boundto="Client" state="Play" comment="">
+         <field name="Flags" type="Byte" comment="Bit mask, see above"/>     
+         <field name="FlyingSpeed" type="Float" comment=""/>
+         <field name="WalkingSpeed" type="Float" comment=""/>              
+    </packet>
+     <packet id="0x3A" name="TabComplete" boundto="Client" state="Play" comment="The server responds with a list of auto-completions of the last word sent to it. In the case of regular chat, this is a player username. Command names and parameters are also supported.">
+        <field name="Count" type="VarInt" comment="Number of elements in the following array"/>
+        <field name="Matches" type="Array" subtype="String" comment="One eligible command, note that each command is sent separately instead of in a single string, hence the need for Count"/>
+    </packet>
+    <packet id="0x3B" name="ScoreboardObjective" boundto="Client" state="Play" comment="This is sent to the client when it should create a new scoreboard objective or remove one.">
+        <field name="ObjectiveName" type="String" comment="An unique name for the objective"/>
+        <field name="Mode" type="Byte" comment="0 to create the scoreboard. 1 to remove the scoreboard. 2 to update the display text."/>
+        <field name="ObjectiveValue" type="String" optional="true" comment="Only if mode is 0 or 2. The text to be displayed for the score"/>
+        <field name="Type" type=" "  optional="true" comment="This is sent to the client when it should update a scoreboard item."/>
+    </packet>
+    <packet id="0x3C" name="UpdateScore" boundto="Client" state="Play" comment="This is sent to the client when it should update a scoreboard item.">
+        <field name="ScoreName" type="String" comment="The name of the score to be updated or removed"/>
+        <field name="Action" type="Byte" comment="0 to create/update an item. 1 to remove an item."/>
+        <field name="ObjectiveName" type="String" comment="The name of the objective the score belongs to"/>
+        <field name="Value" type="VarInt" optional="true" comment="The score to be displayed next to the entry. Only sent when Action does not equal 1."/>
+    </packet>
+    <packet id="0x3D" name="DisplayScoreboard" boundto="Client" state="Play" comment="This is sent to the client when it should display a scoreboard.">
+        <field name="Position" type="Byte" comment="The position of the scoreboard. 0: list, 1: sidebar, 2: below name."/>
+        <field name="Score" type="String" comment="The unique name for the scoreboard to be displayed."/>
+    </packet>
+     <packet id="0x3E" name="Teams" boundto="Client" state="Play" comment="Creates and updates teams.">
+        <field name="TeamName" type="String" comment="A unique name for the team. (Shared with scoreboard)."/>
+        <field name="Mode" type="Byte" comment="If 0 then the team is created. If 1 then the team is removed. If 2 the team team information is updated. If 3 then new players are added to the team. If 4 then players are removed from the team."/>
+        <field name="TeamDisplayName" type="String" optional="true" comment="Only if Mode = 0 or 2."/>
+        <field name="TeamPrefix" type="String" optional="true" comment="Only if Mode = 0 or 2. Displayed before the players' name that are part of this team"/>
+        <field name="TeamSuffix" type="String" optional="true" comment="Only if Mode = 0 or 2. Displayed after the players' name that are part of this team"/>
+        <field name="FriendlyFire" type="Byte" optional="true" comment="Only if Mode = 0 or 2. 0 for off, 1 for on, 3 for seeing friendly invisibles"/>
+        <field name="NameTagVisibility" type="String" optional="true" comment="Only if Mode = 0 or 2. always, hideForOtherTeams, hideForOwnTeam, never"/>
+        <field name="Color" type="Byte" optional="true" comment="Only if Mode = 0 or 2. Same as Chat colors"/>
+        <field name="PlayerCount" type="VarInt" optional="true" comment="Only if Mode = 0 or 3 or 4. Number of players in the array"/>
+        <field name="Players" type="Array" subtype="String" optional="true" comment="Only if Mode = 0 or 3 or 4. Players to be added/remove from the team. Max 40 characters so may be uuid's later"/>
+    </packet>
+    <packet id="0x3F" name="PluginMessage" boundto="Client" state="Play" comment="Mods and plugins can use this to send their data. Minecraft itself uses a number of plugin channels. These internal channels are prefixed with MC|. More documentation on this: http://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/">
+        <field name="Channel" type="String" comment="Name of the plugin channel used to send the data"/>
+        <field name="Data" type="ByteArray" comment="Any data, depending on the channel. MC| channels are documented here."/>
+    </packet>
+    <packet id="0x40" name="Disconnect" boundto="Client" state="Play" comment="Sent by the server before it disconnects a client. The server assumes that the sender has already closed the connection by the time the packet arrives.">
+        <field name="Reason" type="Chat" comment="Displayed to the client when the connection terminates."/>
+    </packet>
+    <packet id="0x41" name="ServerDifficulty" boundto="Client" state="Play" comment="Changes the difficulty setting in the client's option menu">
+        <field name="Difficulty" type="UnsignedByte" comment="0: peaceful, 1: easy, 2: normal, 3: hard"/>
+    </packet>
+    <packet id="0x42" name="CombatEvent" boundto="Client" state="Play" comment="-">
+        <field name="Event" type="VarInt" comment="0: enter combat, 1: end combat, 2: entity dead"/>
+        <field name="Duration" type="VarInt" optional="true" comment="Only for end combat"/>
+        <field name="PlayerID" type="VarInt" optional="true" comment="Only for entity dead"/>
+        <field name="EntityID" type="Int" optional="true" comment="Only for end combat and entity dead"/>
+        <field name="Message" type="String" comment="Only for entity dead"/>
+    </packet>
+    <packet id="0x43" name="Camera" boundto="Client" state="Play" comment="-">
+        <field name="CameraID" type="VarInt" comment="-"/>
+    </packet>
+    <packet id="0x44" name="WorldBorder" boundto="Client" state="Play" comment="-">
+        <field name="Action" type="VarInt" comment="Determines the format of the rest of the packet"/>
+        <field name="Radius" type="Double" comment="meters"/>
+        <field name="OldRadius" type="Double" comment="meters"/>
+        <field name="NewRadius" type="Double" comment="meters"/>
+        <field name="Speed" type="VarLong" comment="number of real-time ticks/seconds (?) until New Radius is reached. From experiments, it appears that Notchian server does not sync world border speed to game ticks, so it gets out of sync with server lag"/>
+        <field name="X" type="Double" comment="-"/>
+        <field name="Z" type="Double" comment="-"/>
+        <field name="X" type="Double" comment="-"/>
+        <field name="Z" type="Double" comment="-"/>
+        <field name="OldRadius" type="Double" comment="-"/>
+        <field name="NewRadius" type="Double" comment="-"/>
+        <field name="Speed" type="VarLong" comment="-"/>
+        <field name="PortalTeleport Boundary" type="VarInt" comment="Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984."/>
+        <field name="WarningTime" type="VarInt" comment="-"/>
+        <field name="WarningBlocks" type="VarInt" comment="-"/>
+        <field name="WarningTime" type="VarInt" comment="unit?"/>
+        <field name="WarningBlocks" type="VarInt" comment="-"/>
+    </packet>
+    <packet id="0x45" name="Title" boundto="Client" state="Play" comment="-">
+        <field name="Action" type="VarInt" comment="-"/>
+        <field name="Title Text" type="Chat" comment="-"/>
+        <field name="Subtitle Text    " type="Chat" comment="-"/>
+        <field name="Fade In" type="Int" comment="ticks"/>
+        <field name="Fade Out" type="Int" comment="ticks"/>
+    </packet>
+    <packet id="0x46" name="SetCompression" boundto="Client" state="Play" comment="-">
+        <field name="Threshold" type="VarInt" comment="Packets of this size or higher may be compressed"/>
+    </packet>
+    <packet id="0x47" name="PlayerListHeaderOrFooter" boundto="Client" state="Play" comment="-">
+        <field name="Header" type="Chat" comment="-"/>
+        <field name="Footer" type="Chat" comment="-"/>
+    </packet>
+    <packet id="0x48" name="ResourcePackSend" boundto="Client" state="Play" comment="-">
+        <field name="URL" type="String" comment="The URL to the resource pack."/>
+        <field name="URL" type="String" comment="A 40 character hexadecimal and lowercase SHA-1 hash of the resource pack file. (must be lower case in order to work) If it's not a 40 character hexadecimal string, the client will not use it for hash verification and likely waste bandwidth — but it will still treat it as a unique id"/>
+    </packet>
+    <packet id="0x49" name="UpdateEntity NBT" boundto="Client" state="Play" comment="-">
+        <field name="EntityID" type="VarInt" comment="-"/>
+        <field name="Tag" type="NBTTag" comment="-"/>
+    </packet>    
+    <packet id="0x00" name="KeepAlive" boundto="Server" state="Play" comment="The server will frequently send out a keep-alive, each containing a random ID. The client must respond with the same packet. ">
+        <field name="KeepAliveID " type="VarInt" comment=""/>
+    </packet>
+    <packet id="0x01" name="ChatMessage" boundto="Server" state="Play" comment="The default server will check the message to see if it begins with a '/'. If it doesn't, the username of the sender is prepended and sent to all other clients (including the original sender). If it does, the server assumes it to be a command and attempts to process it. A message longer than 100 characters will cause the server to kick the client. This change was initially done by allowing the client to not slice the message up to 119 (the previous limit), without changes to the server. For this reason, the vanilla server kept the code to cut messages at 119, but this isn't a protocol limitation and can be ignored.">
+        <field name="Message" type="Chat" comment=""/>        
+    </packet>
+    <packet id="0x02" name="UseEntity" boundto="Server" state="Play" comment="This packet is sent from the client to the server when the client attacks or right-clicks another entity (a player, minecart, etc).A Notchian server only accepts this packet if the entity being attacked/used is visible without obstruction and within a 4-unit radius of the player's position.Note that middle-click in creative mode is interpreted by the client and sent as a Creative Inventory Action packet instead.">
+        <field name="Target" type="VarInt" comment=""/>
+        <field name="Type" type="VarInt" comment="0: interact, 1: attack, 2: interact at"/>
+        <field name="TargetX" type="Float" optional="true" comment="Only if Type is interact at"/>
+        <field name="TargetY" type="Float" optional="true" comment="Only if Type is interact at"/>
+        <field name="TargetZ" type="Float" optional="true" comment="Only if Type is interact at"/>        
+    </packet>
+    <packet id="0x03" name="Player" boundto="Server" state="Play" comment="This packet is used to indicate whether the player is on ground (walking/swimming), or airborne (jumping/falling).When dropping from sufficient height, fall damage is applied when this state goes from false to true. The amount of damage applied is based on the point where it last changed from true to false. Note that there are several movement related packets containing this state.">
+        <field name="OnGround " type="Boolean" comment="True if the client is on the ground, false otherwise "/>           
+    </packet>
+    <packet id="0x04" name="PlayerPosition" boundto="Server" state="Play" comment="Updates the player's XYZ position on the server.If the distance between the last known position of the player on the server and the new position set by this packet is greater than 100 units, this will result in the client being kicked for “You moved too quickly :( (Hacking?)” Also if the fixed-point number of X or Z is set greater than 3.2E7D the client will be kicked for “Illegal position”.">
+        <field name="X" type="Double" comment="Absolute position"/>
+        <field name="FeetY" type="Double" comment="Absolute position, normally Head Y - 1.62"/>
+        <field name="Z" type="Double" comment="Absolute position"/>
+        <field name="OnGround" type="Boolean" comment="True if the client is on the ground, false otherwise"/>            
+    </packet>
+    <packet id="0x05" name="PlayerLook" boundto="Server" state="Play" comment="Updates the direction the player is looking in.Yaw is measured in degrees, and does not follow classical trigonometry rules. The unit circle of yaw on the XZ-plane starts at (0, 1) and turns counterclockwise, with 90 at (-1, 0), 180 at (0,-1) and 270 at (1, 0). Additionally, yaw is not clamped to between 0 and 360 degrees; any number is valid, including negative numbers and numbers greater than 360.Pitch is measured in degrees, where 0 is looking straight ahead, -90 is looking straight up, and 90 is looking straight down.">
+        <field name="Yaw" type="Float" comment="Absolute rotation on the X Axis, in degrees"/>
+        <field name="Pitch" type="Float" comment="Absolute rotation on the Y Axis, in degrees"/>
+        <field name="OnGround" type="Boolean" comment="True if the client is on the ground, False otherwise"/>                   
+    </packet>
+    <packet id="0x06" name="PlayerPositionAndLook" boundto="Server" state="Play" comment="A combination of Player Look and Player Position.">
+        <field name="X" type="Double" comment="Absolute position"/>
+        <field name="FeetY" type="Double" comment="Absolute position, normally Head Y - 1.62"/>
+        <field name="Z" type="Double" comment="Absolute position"/>
+        <field name="Yaw" type="Float" comment="Absolute rotation on the X Axis, in degrees"/>
+        <field name="Pitch" type="Float" comment="Absolute rotation on the Y Axis, in degrees"/>
+        <field name="OnGround" type="Boolean" comment="True if the client is on the ground, false otherwise"/>
+    </packet>
+    <packet id="0x07" name="PlayerDigging" boundto="Server" state="Play" comment="Sent when the player mines a block. A Notchian server only accepts digging packets with coordinates within a 6-unit radius of the player's position.">
+        <field name="Status" type="Byte" comment="The action the player is taking against the block (see below)"/>
+        <field name="Location" type="Position" comment="Block position"/>
+        <field name="Face" type="Byte" comment="The face being hit (see below)"/>
+    </packet>
+    <packet id="0x08" name="PlayerBlockPlacement" boundto="Server" state="Play" comment="In normal operation (i.e. placing a block), this packet is sent once, with the values set normally.This packet has a special case where X, Y, Z, and Direction are all -1. (Note that Y is unsigned so set to 255.) This special packet indicates that the currently held item for the player should have its state updated such as eating food, pulling back bows, using buckets, etc.In a Notchian Beta client, the block or item ID corresponds to whatever the client is currently holding, and the client sends one of these packets any time a right-click is issued on a surface, so no assumptions can be made about the safety of the ID. However, with the implementation of server-side inventory, a Notchian server seems to ignore the item ID, instead operating on server-side inventory information and holding selection. The client has been observed (1.2.5 and 1.3.2) to send both real item IDs and -1 in a single session.Special note on using buckets: When using buckets, the Notchian client might send two packets: first a normal and then a special case. The first normal packet is sent when you're looking at a block (e.g. the water you want to scoop up). This normal packet does not appear to do anything with a Notchian server. The second, special case packet appears to perform the action — based on current position/orientation and with a distance check — it appears that buckets can only be used within a radius of 6 units.">
+        <field name="Location" type="Position" comment="Block position"/>
+        <field name="Direction" type="Byte" comment="The offset to use for block/item placement (see below)"/>
+        <field name="HeldItem" type="Slot" comment=""/>
+        <field name="CursorPositionX" type="Byte" comment="The position of the crosshair on the block"/>
+        <field name="CursorPositionY" type="Byte" comment=""/>
+        <field name="CursorPositionZ" type="Byte" comment=""/>
+    </packet>
+    <packet id="0x09" name="HeldItemChange" boundto="Server" state="Play" comment="Sent when the player changes the slot selection">
+        <field name="Slot" type="Short" comment="The slot which the player has selected (0–8)"/>        
+    </packet>
+    <packet id="0x0A" name="Animation" boundto="Server" state="Play" comment="Sent when the player mines a block. A Notchian server only accepts digging packets with coordinates within a 6-unit radius of the player's position.">
+    </packet>
+    <packet id="0x0B" name="EntityAction" boundto="Server" state="Play" comment="Sent at least when crouching, leaving a bed, or sprinting. To send action animation to client use 0x28. The client will send this with Action ID = 3 when “Leave Bed” is clicked.">
+        <field name="EntityID" type="VarInt" comment="Player ID"/>
+        <field name="ActionID" type="VarInt" comment="The ID of the action, see below"/>
+        <field name="JumpBoost" type="VarInt" comment="Horse jump boost. Ranged from 0 -> 100."/>
+    </packet>
+    <packet id="0x0C" name="SteerVehicle" boundto="Server" state="Play" comment="">
+        <field name="Sideways" type="Float" comment="Positive to the left of the player"/>
+        <field name="Forward" type="Float" comment="Positive forward"/>
+        <field name="Flags" type="UnsignedByte" comment="TBit mask. 0x1: jump, 0x2: unmount"/>
+    </packet>
+    <packet id="0x0D" name="CloseWindow" boundto="Server" state="Play" comment="This packet is sent by the client when closing a window.Note, Notchian clients send a close window message with Window ID 0 to close their inventory even though there is never an Open Window message for inventory.">
+        <field name="WindowID" type="Byte" comment="This is the ID of the window that was closed. 0 for inventory."/>       
+    </packet>
+    <packet id="0x0E" name="ClickWindow" boundto="Server" state="Play" comment="This packet is sent by the player when it clicks on a slot in a window.">
+        <field name="WindowID" type="Byte" comment="The ID of the window which was clicked. 0 for player inventory."/>
+        <field name="Slot" type="Short" comment="The clicked slot, see below"/>
+        <field name="Button" type="Byte" comment="The button used in the click, see below"/>
+        <field name="ActionNumber" type="Short" comment="A unique number for the action, implemented by Notchian as a counter, starting at 1. Used by the server to send back a Confirm Transaction."/>
+        <field name="Mode" type="Byte" comment="Inventory operation mode, see below "/>
+        <field name="Clickeditem" type="Slot" comment=""/>
+    </packet>
+    <packet id="0x0F" name="ConfirmTransaction" boundto="Server" state="Play" comment="&lt;SpaceManiac> noooo idea why the serverbound confirm transaction packet exists&lt;SpaceManiac> I think it's sent as a response to the clientbound confirm transaction in some situations, but it's fuzzy">
+        <field name="WindowID" type="Byte" comment="The ID of the window that the action occurred in"/>
+        <field name="ActionNumber" type="Short" comment="Every action that is to be accepted has a unique number. This field corresponds to that number."/>
+        <field name="Accepted" type="Boolean" comment="Whether the action was accepted"/>
+    </packet>
+    <packet id="0x10" name="CreativeInventoryAction" boundto="Server" state="Play" comment="While the user is in the standard inventory (i.e., not a crafting bench) in Creative mode, the server will send this packet:    If an item is dropped into the quick bar    If an item is picked up from the quick bar (item ID is -1)">
+        <field name="Slot" type="Short" comment="Inventory slot"/>
+        <field name="ClickedItem" type="Slot" comment=""/>        
+    </packet>
+    <packet id="0x11" name="EnchantItem" boundto="Server" state="Play" comment="">
+        <field name="WindowID" type="Byte" comment="The ID of the enchantment table window sent by Open Window"/>
+        <field name="Enchantment" type="Byte" comment="The position of the enchantment on the enchantment table window, starting with 0 as the topmost one"/>        
+    </packet>
+    <packet id="0x12" name="UpdateSign" boundto="Server" state="Play" comment="This message is sent from the client to the server when the “Done” button is pushed after placing a sign.">
+        <field name="Location" type="Position" comment="Block Coordinates"/>
+        <field name="Line1" type="Chat" comment="First line of text in the sign"/>
+        <field name="Line2" type="Chat" comment="Second line of text in the sign"/>
+        <field name="Line3" type="Chat" comment="Third line of text in the sign"/>
+        <field name="Line4" type="Chat" comment="Fourth line of text in the sign"/>        
+    </packet>
+    <packet id="0x13" name="PlayerAbilities" boundto="Server" state="Play" comment="The latter 2 bytes are used to indicate the walking and flying speeds respectively, while the first byte is used to determine the value of 4 booleans.The vanilla client sends this packet when the player starts/stops flying with the second parameter changed accordingly. All other parameters are ignored by the vanilla server.">
+        <field name="Flags" type="Byte" comment="Bit mask. 0x08: damage disabled (god mode), 0x04: can fly, 0x02: is flying, 0x01: is Creative"/>
+        <field name="FlyingSpeed" type="Float" comment=""/>
+        <field name="WalkingSpeed " type="Float" comment=""/>
+    </packet>
+    <packet id="0x14" name="TabComplete" boundto="Server" state="Sent when the user presses tab while writing text.">
+        <field name="Text" type="String" comment="All text behind the cursor"/>
+        <field name="HasPosition" type="Boolean" comment=""/>
+        <field name="LookedAtBlock" type="Position" optional="true" comment="The position of the block being looked at. Only sent if Has Position is true"/>
+    </packet>
+    <packet id="0x15" name="ClientSettings" boundto="Server" state="Play" comment="Sent when the player connects, or when settings are changed.">
+        <field name="Locale" type="String" comment="e.g. en_GB"/>
+        <field name="ViewDistance" type="Byte" comment="Client-side render distance, in chunks"/>
+        <field name="ChatMode" type="Byte" comment="0: enabled, 1: commands only, 2: hidden"/>
+        <field name="ChatColors" type="Boolean" comment="Colors” multiplayer setting"/>
+        <field name="DisplayedSkinParts" type="UnsignedByte" comment="Skin parts, see note below"/>
+    </packet>
+    <packet id="0x16" name="ClientStatus" boundto="Server" state="Play" comment="Sent when the client is ready to complete login and when the client is ready to respawn after death.">
+        <field name="ActionID" type="VarInt" comment="See below"/>
+    </packet>
+
+    <packet id="0x17" name="PluginMessage" boundto="Server" state="Play" comment="Mods and plugins can use this to send their data. Minecraft itself uses a number of plugin channels. These internal channels are prefixed with MC|.More documentation on this: http://dinnerbone.com/blog/2012/01/13/minecraft-plugin-channels-messaging/  Note that the data length is known from the packet length, so there is no need for a length member being sent.">
+        <field name="Channel" type="String" comment="Name of the plugin channel used to send the data"/>
+        <field name="Data" type="ByteArray" comment="Any data, depending on the channel. MC| channels are documented here."/>        
+    </packet>
+
+    <packet id="0x18" name="Spectate" boundto="Server" state="Play" comment="">
+        <field name="TargetPlayer" type="UUID" comment=""/>       
+    </packet>
+
+    <packet id="0x19" name="ResourcePackStatus" boundto="Server" state="Play" comment="">
+        <field name="Hash" type="String" comment="The hash sent in the Resource Pack Send packet."/>
+        <field name="Result" type="VarInt" comment="0: successfully loaded, 1: declined, 2: failed download, 3: accepted"/>        
+    </packet>
+    <packet id="0x00" name="Response" boundto="Client" state="Status">
+        <field name="JSONResponse" type="String" comment="https://gist.github.com/thinkofdeath/6927216"/>
+    </packet>
+    <packet id="0x01" name="Ping" boundto="Client" state="Status">
+        <field name="Time" type="Long" comment="Should be the same as sent by the client"/>
+    </packet>
+    <packet id="0x00" name="Request" boundto="Server" state="Status"/>
+    <packet id="0x01" name="Ping" boundto="Server" state="Status">
+        <field name="Time" type="Long" comment=""/>
+    </packet>
+    <packet id="0x00" name="Disconnect" boundto="Client" state="Login">
+        <field name="Reason" type="Chat" comment=""/>
+    </packet>
+    <packet id="0x01" name="EncryptionRequest" boundto="Client" state="Login">
+        <field name="ServerID" type="String" comment="Appears to be empty"/>
+        <field name="PublicKeyLength" type="VarInt" comment="Length of Public Key"/>
+        <field name="PublicKey" type="Array" subtype="Byte" length="PublicKeyLength" comment=""/>
+        <field name="VerifyTokenLength" type="VarInt" comment="Length of Verify Token"/>
+        <field name="VerifyToken" type="Array" subtype="Byte" length="VerifyTokenLength" comment=""/>
+    </packet>
+    <packet id="0x02" name="LoginSuccess" boundto="Client" state="Login">
+        <field name="UUID" type="String"/>
+        <field name="Username" type="String"/>
+    </packet>
+    <packet id="0x03" name="SetCompression" boundto="Client" state="Login">
+        <field name="Threshold" type="VarInt" comment="Maximum size of a packet before its compressed"/>
+    </packet>
+    <packet id="0x00" name="LoginStart" boundto="Server" state="Login">
+        <field name="Name" type="String"/>
+    </packet>
+    <packet id="0x01" name="EncryptionResponse" boundto="Server" state="Login">
+        <field name="SharedSecretLength" type="VarInt" comment="Length of Shared Secret"/>
+        <field name="SharedSecret" type="Array" subtype="Byte" length="SharedSecretLength" comment=""/>
+        <field name="VerifyTokenLength" type="VarInt" comment="Length of Verify Token"/>
+        <field name="VerifyToken" type="Array" subtype="Byte" length="VerifyTokenLength" comment=""/>
+    </packet>
+</proto>
