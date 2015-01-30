@@ -31,7 +31,7 @@
         <field name="TimeOfDay" type="Long" comment="The world (or region) time, in ticks. If negative the sun will stop moving at the Math.abs of the time"/>
     </packet>
     <packet id="0x04" name="EntityEquipment" boundto="Client" state="Play" comment="">
-        <field name="Entity ID" type="VarInt" comment="Entity's EID"/>
+        <field name="EntityID" type="VarInt" comment="Entity's EID"/>
         <field name="Slot" type="Short" comment="Equipment slot. 0: held, 1–4: armor slot (1: boots, 2: leggings, 3: chestplate, 4: helmet)"/>
         <field name="Item" type="Slot" comment="Item in slot format"/>
     </packet>
@@ -81,7 +81,6 @@
     </packet>
     <packet id="0x0D" name="CollectItem" boundto="Client" state="Play" comment="Sent by the server when someone picks up an item lying on the ground — its sole purpose appears to be the animation of the item flying towards you. It doesn't destroy the entity in the client memory, and it doesn't add it to your inventory. The server only checks for items to be picked up after each Player Position (and Player Position And Look) packet sent by the client.">
         <field name="CollectedEntityID" type="VarInt" comment=""/>
-        <field name="Collected EntityID" type="VarInt" comment=""/>
     </packet>
     <packet id="0x0E" name="SpawnObject" boundto="Client" state="Play" comment="Sent by the server when an Object/Vehicle is created.">
         <field name="EntityID" type="VarInt" comment="Player's EID"/>
@@ -101,10 +100,10 @@
         <field name="Z" type="Int" comment="Player Z as a Fixed-Point number"/>
         <field name="Pitch" type="Angle" comment=""/>
         <field name="Yaw" type="Angle" comment=""/>
-        <field name="Head Pitch" type="Angle" comment=""/>
-        <field name="Velocity X" type="Angle" comment="Same units as Entity Velocity"/>
-        <field name="Velocity Y" type="Angle" comment="Same units as Entity Velocity"/>
-        <field name="Velocity Z" type="Angle" comment="Same units as Entity Velocity"/>
+        <field name="HeadPitch" type="Angle" comment=""/>
+        <field name="VelocityX" type="Angle" comment="Same units as Entity Velocity"/>
+        <field name="VelocityY" type="Angle" comment="Same units as Entity Velocity"/>
+        <field name="VelocityZ" type="Angle" comment="Same units as Entity Velocity"/>
         <field name="Metadata" type="Metadata" comment=""/>
     </packet>
     <packet id="0x10" name="SpawnPainting" boundto="Client" state="Play" comment="This packet shows location, name, and type of painting. Calculating the center of an image: given a (width x height) grid of cells, with (0, 0) being the top left corner, the center is (max(0, width / 2 - 1), height / 2). E.g.">
@@ -122,9 +121,9 @@
     </packet>
     <packet id="0x12" name="EntityVelocity" boundto="Client" state="Play" comment="Velocity is believed to be in units of 1/8000 of a block per server tick (50ms); for example, -1343 would move (-1343 / 8000) = ?0.167875 blocks per tick (or ?3,3575 blocks per second).">
         <field name="EntityID" type="VarInt" comment=""/>
-        <field name="Velocity X" type="Short" comment="Velocity on the X axis"/>
-        <field name="Velocity Y" type="Short" comment="Velocity on the Y axis"/>
-        <field name="Velocity Z" type="Short" comment="Velocity on the Z axis"/>
+        <field name="VelocityX" type="Short" comment="Velocity on the X axis"/>
+        <field name="VelocityY" type="Short" comment="Velocity on the Y axis"/>
+        <field name="VelocityZ" type="Short" comment="Velocity on the Z axis"/>
     </packet>
     <packet id="0x13" name="DestroyEntities" boundto="Client" state="Play" comment="Sent by the server when a list of entities is to be destroyed on the client.">
         <field name="Count" type="VarInt" comment="Number of elements in the following array"/>
@@ -183,10 +182,10 @@
     </packet>
     <packet id="0x1D" name="EntityEffect" boundto="Client" state="Play" comment="">
         <field name="EntityID" type="VarInt" comment=""/>
-        <field name="EntityID" type="Byte" comment="See this table"/>
+        <field name="EffectID" type="Byte" comment="See this table"/>
         <field name="Amplifier" type="Byte" comment="Notchian client displays effect level as Amplifier + 1"/>
         <field name="Duration" type="VarInt" comment="Seconds"/>
-        <field name="Hide Particles" type="Boolean" comment=""/>
+        <field name="HideParticles" type="Boolean" comment=""/>
     </packet>
     <packet id="0x1E" name="RemoveEntityEffect" boundto="Client" state="Play" comment="">
         <field name="EntityID" type="VarInt" comment=""/>
@@ -216,7 +215,7 @@
     <packet id="0x21" name="ChunkData" boundto="Client" state="Play" comment="Chunks are not unloaded by the client automatically. To unload chunks, send this packet with Ground-Up Continuous=true and no 16^3 chunks (eg. Primary Bit Mask=0). The server does not send skylight information for nether-chunks, it's up to the client to know if the player is currently in the nether. You can also infer this information from the primary bitmask and the amount of uncompressed bytes sent.">
         <field name="ChunkX" type="Int" comment="Chunk X coordinate"/>
         <field name="ChunkZ" type="Boolean" comment="Chunk Z coordinate"/>
-        <field name="Ground-UpContinuous" type="Array" subtype="String" comment="This is true if the packet represents all sections in this vertical column, where the Primary Bit Mask specifies exactly which sections are included, and which are air"/>
+        <field name="GroundUpContinuous" type="Array" subtype="String" comment="This is true if the packet represents all sections in this vertical column, where the Primary Bit Mask specifies exactly which sections are included, and which are air"/>
         <field name="PrimaryBitMask" type="UnsignedShort" comment="Bitmask with 1 for every 16x16x16 section whose data follows in the compressed data"/>
         <field name="Size" type="VarInt" comment="Size of Data"/>
         <field name="Data" type="Chunk" comment="See Attribute#Modifiers"/>
@@ -281,8 +280,8 @@
         <field name="Pitch" type="UnsignedByte" comment="63 is 100%, can be more"/>
     </packet>
     <packet id="0x2A" name="Particle" boundto="Client" state="Play" comment="Displays the named particle">
-        <field name="Particle ID" type="Int" comment="See below"/>
-        <field name="Long Distance" type="Boolean" comment="If true, particle distance increases from 256 to 65536"/>
+        <field name="ParticleID" type="Int" comment="See below"/>
+        <field name="LongDistance" type="Boolean" comment="If true, particle distance increases from 256 to 65536"/>
         <field name="X" type="Float" comment="X position of the particle"/>
         <field name="Y" type="Float" comment="Y position of the particle"/>
         <field name="Z" type="Float" comment="Z position of the particle"/>
@@ -429,29 +428,29 @@
     </packet>
     <packet id="0x44" name="WorldBorder" boundto="Client" state="Play" comment="-">
         <field name="Action" type="VarInt" comment="Determines the format of the rest of the packet"/>
-        <field name="Radius" type="Double" comment="meters"/>
-        <field name="OldRadius" type="Double" comment="meters"/>
-        <field name="NewRadius" type="Double" comment="meters"/>
-        <field name="Speed" type="VarLong" comment="number of real-time ticks/seconds (?) until New Radius is reached. From experiments, it appears that Notchian server does not sync world border speed to game ticks, so it gets out of sync with server lag"/>
-        <field name="X" type="Double" comment="-"/>
-        <field name="Z" type="Double" comment="-"/>
-        <field name="X" type="Double" comment="-"/>
-        <field name="Z" type="Double" comment="-"/>
-        <field name="OldRadius" type="Double" comment="-"/>
-        <field name="NewRadius" type="Double" comment="-"/>
-        <field name="Speed" type="VarLong" comment="-"/>
-        <field name="PortalTeleport Boundary" type="VarInt" comment="Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984."/>
-        <field name="WarningTime" type="VarInt" comment="-"/>
-        <field name="WarningBlocks" type="VarInt" comment="-"/>
-        <field name="WarningTime" type="VarInt" comment="unit?"/>
-        <field name="WarningBlocks" type="VarInt" comment="-"/>
+        <field name="SetSizeRadius" type="Double" comment="meters"/>
+        <field name="LerpSizeOldRadius" type="Double" comment="meters"/>
+        <field name="LerpSizeNewRadius" type="Double" comment="meters"/>
+        <field name="LerpSizeSpeed" type="VarLong" comment="number of real-time ticks/seconds (?) until New Radius is reached. From experiments, it appears that Notchian server does not sync world border speed to game ticks, so it gets out of sync with server lag"/>
+        <field name="SetCenterX" type="Double" comment="-"/>
+        <field name="SetCenterZ" type="Double" comment="-"/>
+        <field name="InitializeX" type="Double" comment="-"/>
+        <field name="InitializeZ" type="Double" comment="-"/>
+        <field name="InitializeOldRadius" type="Double" comment="-"/>
+        <field name="InitializeNewRadius" type="Double" comment="-"/>
+        <field name="InitializeSpeed" type="VarLong" comment="-"/>
+        <field name="InitializePortalTeleportBoundary" type="VarInt" comment="Resulting coordinates from a portal teleport are limited to +-value. Usually 29999984."/>
+        <field name="InitializeWarningTime" type="VarInt" comment="-"/>
+        <field name="InitializeWarningBlocks" type="VarInt" comment="-"/>
+        <field name="SetWarningTimeWarningTime" type="VarInt" comment="unit?"/>
+        <field name="SetWarningBlocksWarningBlocks" type="VarInt" comment="-"/>
     </packet>
     <packet id="0x45" name="Title" boundto="Client" state="Play" comment="-">
         <field name="Action" type="VarInt" comment="-"/>
-        <field name="Title Text" type="Chat" comment="-"/>
-        <field name="Subtitle Text    " type="Chat" comment="-"/>
-        <field name="Fade In" type="Int" comment="ticks"/>
-        <field name="Fade Out" type="Int" comment="ticks"/>
+        <field name="TitleText" type="Chat" comment="-"/>
+        <field name="SubtitleText" type="Chat" comment="-"/>
+        <field name="FadeIn" type="Int" comment="ticks"/>
+        <field name="FadeOut" type="Int" comment="ticks"/>
     </packet>
     <packet id="0x46" name="SetCompression" boundto="Client" state="Play" comment="-">
         <field name="Threshold" type="VarInt" comment="Packets of this size or higher may be compressed"/>
@@ -464,7 +463,7 @@
         <field name="URL" type="String" comment="The URL to the resource pack."/>
         <field name="URL" type="String" comment="A 40 character hexadecimal and lowercase SHA-1 hash of the resource pack file. (must be lower case in order to work) If it's not a 40 character hexadecimal string, the client will not use it for hash verification and likely waste bandwidth — but it will still treat it as a unique id"/>
     </packet>
-    <packet id="0x49" name="UpdateEntity NBT" boundto="Client" state="Play" comment="-">
+    <packet id="0x49" name="UpdateEntityNBT" boundto="Client" state="Play" comment="-">
         <field name="EntityID" type="VarInt" comment="-"/>
         <field name="Tag" type="NBTTag" comment="-"/>
     </packet>    
@@ -567,7 +566,7 @@
         <field name="FlyingSpeed" type="Float" comment=""/>
         <field name="WalkingSpeed " type="Float" comment=""/>
     </packet>
-    <packet id="0x14" name="TabComplete" boundto="Server" state="Sent when the user presses tab while writing text.">
+    <packet id="0x14" name="TabComplete" boundto="Server" state="Play" comment="Sent when the user presses tab while writing text.">
         <field name="Text" type="String" comment="All text behind the cursor"/>
         <field name="HasPosition" type="Boolean" comment=""/>
         <field name="LookedAtBlock" type="Position" optional="true" comment="The position of the block being looked at. Only sent if Has Position is true"/>

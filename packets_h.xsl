@@ -20,6 +20,7 @@ class <xsl:value-of select="./@name"/>
 {
 public:
     bool internal_parse(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint32 &amp;offset);
+    guint dataLength();
 };
 </xsl:for-each>
 <xsl:for-each select="/proto/packet">
@@ -37,8 +38,9 @@ protected:
     virtual hf_register_info *getFieldInfo_internal();
     virtual int getId();
     virtual bool internal_parse(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, guint32 &amp;offset);
+    virtual const char *getName();
 private:
-    <xsl:for-each select="./@field">
+    <xsl:for-each select="./field">
     gint hf_mc_id_<xsl:value-of select="./@name"/>;
     hf_register_info hf_mc_<xsl:value-of select="./@name"/>;
     </xsl:for-each>
